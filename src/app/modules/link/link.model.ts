@@ -9,9 +9,20 @@ const linkSchema = new Schema<ILink>(
         },
         shortCode: {
             type: String,
-            default: null,
         },
-        isPublic: {
+        alias: {
+            type: String,
+        },
+        createdBy: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: "User",
+        },
+        clicks: {
+            type: Number,
+            default: 0,
+        },
+        isActive: {
             type: Boolean,
             default: true,
         },
