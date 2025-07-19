@@ -23,9 +23,9 @@ router.get(
     LinkController.getMyLinks
 );
 
+// Retrieve link from Short Code or Alias and get redirected!
 router.get(
-    "/:linkId",
-    auth(UserRole.GUEST, UserRole.USER),
+    "/:linkCode",
     LinkController.getSingleLink
 );
 

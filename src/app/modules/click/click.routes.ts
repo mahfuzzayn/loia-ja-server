@@ -1,9 +1,5 @@
-import { Router } from 'express';
-import { clickController } from './click.controller';
+import express from "express"
 
-const router = Router();
+const router = express.Router()
 
-// Define routes
-router.get('/', clickController.getAll);
-
-export default router;
+export const ClickRoutes = router;

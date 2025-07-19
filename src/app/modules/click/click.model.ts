@@ -1,15 +1,60 @@
-import { Schema, model, Document } from 'mongoose';
+import { model, Schema } from "mongoose";
+import { IClick } from "./click.interface";
 
-export interface IClickModel extends Document {
-  name: string;
-  // add more fields here
-}
+const locationSchema = {
+    country: {
+        type: String,
+    },
+    city: {
+        type: String,
+    },
+    region: {
+        type: String,
+    },
+    latitude: {
+        type: Number,
+    },
+    longitude: {
+        type: Number,
+    },
+};
 
-const clickSchema = new Schema<IClickModel>({
-  name: { type: String, required: true },
-  // add more fields here
-});
+const deviceSchema = {
+    browser: {
+        type: String,
+    },
+    type: {
+        type: String,
+    },
+    vendor: {
+        type: String,
+    },
+    model: {
+        type: String,
+    },
+};
 
-const clickModel = model<IClickModel>('Click', clickSchema);
+const clickSchema = new Schema<IClick>(
+    {
+        link: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: "Link",
+        },
+        ipAddress: {
+            type: String,
+        },
+        userAgent: {
+            type: String,
+        },
+        device: deviceSchema,
+        location: locationSchema,
+        referer: { type: String },
+        clickedAt: { type: Date },
+    },
+    {
+        timestamps: true,
+    }
+);
 
-export default clickModel;
+export const Click = model<IClick>("clicks", clickSchema);

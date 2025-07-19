@@ -25,11 +25,11 @@ const auth = (...requiredRoles: UserRole[]) => {
                     config.jwt_access_secret as string
                 ) as JwtPayload;
 
-                const { role, email, guestId } = decoded;
+                const { userId, role, email } = decoded;
 
                 if (role === UserRole.GUEST) {
                     const user = await User.findOne({
-                        guestId,
+                        _id: userId,
                         role,
                         isActive: true,
                     });
@@ -42,6 +42,7 @@ const auth = (...requiredRoles: UserRole[]) => {
                     }
                 } else {
                     const user = await User.findOne({
+                        _id: userId,
                         email,
                         role,
                         isActive: true,

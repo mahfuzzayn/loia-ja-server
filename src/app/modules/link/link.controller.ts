@@ -41,8 +41,8 @@ const getAllLinks = catchAsync(async (req, res) => {
 });
 
 const getSingleLink = catchAsync(async (req, res) => {
-    const { linkId } = req.params;
-    const result = await LinkServices.getSingleLinkFromDB(linkId);
+    const { linkCode } = req.params;
+    const result = await LinkServices.getSingleLinkFromDB(req, linkCode);
 
     sendResponse(res, {
         statusCode: StatusCodes.OK,

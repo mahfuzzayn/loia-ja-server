@@ -6,9 +6,22 @@ import { generateShortCode } from "./link.utils";
 import { IJwtPayload } from "../auth/auth.interface";
 import mongoose from "mongoose";
 import { closePath } from "pdfkit";
+import { ClickServices } from "../click/click.service";
+import { Request } from "express";
 
 const createLinkIntoDB = async (authUser: IJwtPayload, payload: ILink) => {
     payload.createdBy = new mongoose.Types.ObjectId(authUser?.userId);
+
+    if (payload?.originalUrl) {
+        const isLinkExistsByOriginalUrl = await Link.findOne({
+            originalUrl: payload?.originalUrl,
+            createdBy: authUser?.userId,
+        });
+
+        if (isLinkExistsByOriginalUrl) {
+            return isLinkExistsByOriginalUrl;
+        }
+    }
 
     if (payload?.alias) {
         const isAliasExists = await Link.findOne({ alias: payload?.alias });
@@ -56,8 +69,11 @@ const getAllLinksFromDB = async () => {
     return links;
 };
 
-const getSingleLinkFromDB = async (linkId: string) => {
-    const link = await Link.findById(linkId);
+// Retrieve link from Short Code or Alias and get redirected!
+const getSingleLinkFromDB = async (req: Request, linkCode: string) => {
+    const link = await Link.findOne({
+        $or: [{ alias: linkCode }, { shortCode: linkCode }],
+    });
 
     if (!link) {
         throw new AppError(
@@ -73,7 +89,12 @@ const getSingleLinkFromDB = async (linkId: string) => {
         );
     }
 
-    return link;
+    // Count Link Click to Click Model
+    await ClickServices.countClickIntoDB(req, link);
+
+    return {
+        redirectUrl: link?.originalUrl,
+    };
 };
 
 const updateLinkIntoDB = async (linkId: string, payload: Partial<ILink>) => {

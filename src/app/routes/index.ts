@@ -3,6 +3,7 @@ import { Router } from "express";
 import { LinkRoutes } from "../modules/link/link.routes";
 import { UserRoutes } from "../modules/user/user.routes";
 import { AuthRoutes } from "../modules/auth/auth.routes";
+import { ClickRoutes } from "../modules/click/click.routes";
 
 const router = Router();
 
@@ -18,6 +19,10 @@ const moduleRoutes = [
     {
         path: "/links",
         route: LinkRoutes,
+    },
+    {
+        path: "/clicks",
+        route: ClickRoutes,
     },
 ];
 
