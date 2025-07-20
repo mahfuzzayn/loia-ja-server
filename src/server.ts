@@ -9,7 +9,7 @@ let server: Server | null = null;
 async function connectToDatabase() {
     try {
         await mongoose.connect(config.db_url as string);
-        console.log("🔹Loia Ja Database connected successfully");
+        console.log("🔹Suto URL Database connected successfully");
     } catch (err) {
         console.error("Failed to connect to database:", err);
         process.exit(1);
@@ -21,7 +21,7 @@ function gracefulShutdown(signal: string) {
     console.log(`Received ${signal}. Closing server...`);
     if (server) {
         server.close(() => {
-            console.log("Loia Ja Server closed gracefully");
+            console.log("Suto URL Server closed gracefully");
             process.exit(0);
         });
     } else {
@@ -37,7 +37,7 @@ async function ignition() {
 
         server = app.listen(config.port, () => {
             console.log(
-                `🍁 Loia Ja Server is running on port ${config.port}\n\t<- https://loiaja-server.vercel.app/ OR http://localhost:5000/ ->`
+                `🍁 Suto URL Server is running on port ${config.port}\n\t<- https://sutourl-server.vercel.app/ OR http://localhost:5000/ ->`
             );
         });
 

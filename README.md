@@ -1,5 +1,5 @@
-# Loia Ja - Server Side (Backend)
+# Suto URL - Server Side (Backend)
 
--   **Live Server**: https://loiaja.vercel.app/
+-   **Live Server**: https://sutourl.vercel.app/
 
 Developed by [Mahfuz Zayn](https://mahfuzzayn.netlify.app/).

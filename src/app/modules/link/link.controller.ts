@@ -109,6 +109,17 @@ const deleteLink = catchAsync(async (req, res) => {
     });
 });
 
+const clearLinks = catchAsync(async (req, res) => {
+    const result = await LinkServices.clearLinksFromDB(req.user as IJwtPayload);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: "Links cleared successfully",
+        data: result,
+    });
+});
+
 export const LinkController = {
     createGuestLink,
     createLink,
@@ -117,4 +128,5 @@ export const LinkController = {
     getSingleLink,
     updateLink,
     deleteLink,
+    clearLinks,
 };

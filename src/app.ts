@@ -11,7 +11,7 @@ const app: Application = express();
 // Middlewares
 app.use(
     cors({
-        origin: ["http://localhost:3000", "https://loiaja.vercel.app"],
+        origin: ["http://localhost:3000", "https://suto.vercel.app"],
         methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
         credentials: true,
     })
@@ -32,7 +32,7 @@ app.get("/", (req: Request, res: Response, next: NextFunction) => {
 
     res.status(StatusCodes.OK).json({
         success: true,
-        message: "Welcome to Loia Ja API Server",
+        message: "Welcome to Suto URL API Server",
         version: "1.0.0",
         clientDetails: {
             ipAddress: clientIp,

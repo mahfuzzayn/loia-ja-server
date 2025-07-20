@@ -18,6 +18,12 @@ router.get(
     LinkController.getMyLinks
 );
 
+router.delete(
+    "/clear",
+    auth(UserRole.GUEST, UserRole.USER, UserRole.ADMIN),
+    LinkController.clearLinks
+);
+
 // Retrieve link from Short Code or Alias and get redirected!
 router.get("/:linkCode", LinkController.getSingleLink);
 

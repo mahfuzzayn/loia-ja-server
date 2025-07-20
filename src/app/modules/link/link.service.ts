@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/appError";
-import { ILink, ILinkPayload } from "./link.interface";
+import { CreateGuestLinkResponse, ILink, ILinkPayload } from "./link.interface";
 import { Link } from "./link.model";
 import { generateShortCode } from "./link.utils";
 import { IJwtPayload } from "../auth/auth.interface";
@@ -12,17 +12,7 @@ import { UserRole } from "../user/user.interface";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../../config";
 import { User } from "../user/user.model";
-
-type TLinkDocument = mongoose.Document<unknown, {}, ILink> &
-    ILink &
-    Required<{ _id: mongoose.Types.ObjectId }> & { __v: number };
-
-type TAuthInfo = { accessToken: string; refreshToken: string };
-
-type CreateGuestLinkResponse = {
-    result: TLinkDocument;
-    authInfo: TAuthInfo | null;
-};
+import { Click } from "../click/click.model";
 
 const createGuestLinkIntoDB = async (
     req: Request,
@@ -108,7 +98,9 @@ const createGuestLinkIntoDB = async (
 
                 try {
                     (isLinkExistsByOriginalUrl.alias = payload?.alias),
-                        await isLinkExistsByOriginalUrl.save();
+                        (isLinkExistsByOriginalUrl.shortUrl = `${config.client_url}/${payload?.alias}`);
+
+                    await isLinkExistsByOriginalUrl.save();
                 } catch (error) {
                     throw new AppError(
                         StatusCodes.INTERNAL_SERVER_ERROR,
@@ -121,6 +113,10 @@ const createGuestLinkIntoDB = async (
         }
     }
 
+    const shortCode = generateShortCode();
+    payload.shortCode = shortCode;
+    payload.shortUrl = `${config.client_url}/${payload?.shortCode}`;
+
     if (payload?.alias) {
         const isAliasExists = await Link.findOne({ alias: payload?.alias });
 
@@ -130,10 +126,9 @@ const createGuestLinkIntoDB = async (
                 "Alias is already in use."
             );
         }
-    }
 
-    const shortCode = generateShortCode();
-    payload.shortCode = shortCode;
+        payload.shortUrl = `${config.client_url}/${payload?.alias}`;
+    }
 
     const result = await Link.create(payload);
 
@@ -168,7 +163,9 @@ const createLinkIntoDB = async (authUser: IJwtPayload, payload: ILink) => {
 
                 try {
                     (isLinkExistsByOriginalUrl.alias = payload?.alias),
-                        await isLinkExistsByOriginalUrl.save();
+                        (isLinkExistsByOriginalUrl.shortUrl = payload?.alias);
+
+                    await isLinkExistsByOriginalUrl.save();
                 } catch (error) {
                     throw new AppError(
                         StatusCodes.INTERNAL_SERVER_ERROR,
@@ -181,6 +178,10 @@ const createLinkIntoDB = async (authUser: IJwtPayload, payload: ILink) => {
         }
     }
 
+    const shortCode = generateShortCode();
+    payload.shortCode = shortCode;
+    payload.shortUrl = `${config.client_url}/${shortCode}`;
+
     if (payload?.alias) {
         const isAliasExists = await Link.findOne({ alias: payload?.alias });
 
@@ -190,10 +191,9 @@ const createLinkIntoDB = async (authUser: IJwtPayload, payload: ILink) => {
                 "Alias is already in use."
             );
         }
-    }
 
-    const shortCode = generateShortCode();
-    payload.shortCode = shortCode;
+        payload.shortUrl = `${config.client_url}/${payload?.alias}`;
+    }
 
     const result = await Link.create(payload);
 
@@ -306,29 +306,91 @@ const updateLinkIntoDB = async (linkId: string, payload: Partial<ILink>) => {
 };
 
 const deleteLinkFromDB = async (linkId: string) => {
-    const link = await Link.findById(linkId);
+    const session = await mongoose.startSession();
 
-    if (!link) {
-        throw new AppError(
-            StatusCodes.NOT_FOUND,
-            "No link were found by the provided link id."
-        );
+    try {
+        session.startTransaction();
+
+        const link = await Link.findById(linkId);
+
+        if (!link) {
+            throw new AppError(
+                StatusCodes.NOT_FOUND,
+                "No link were found by the provided link id."
+            );
+        }
+
+        if (!link.isActive) {
+            throw new AppError(
+                StatusCodes.NOT_FOUND,
+                "Link is unactive or deleted by user."
+            );
+        }
+
+        await Promise.all([
+            Click.deleteMany({ link: link?._id }, { session }),
+            Link.findByIdAndDelete(link?._id, { session }),
+        ]);
+
+        await session.commitTransaction();
+
+        return {
+            message: "Link deleted successfully.",
+        };
+    } catch (error) {
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+    } finally {
+        session.endSession();
     }
+};
 
-    if (!link.isActive) {
-        throw new AppError(
-            StatusCodes.NOT_FOUND,
-            "Link is unactive or deleted by user."
+const clearLinksFromDB = async (authUser: IJwtPayload) => {
+    const session = await mongoose.startSession();
+
+    try {
+        session.startTransaction();
+
+        const isUserExists = await User.findById(authUser?.userId).session(
+            session
         );
+
+        if (!isUserExists) {
+            throw new AppError(StatusCodes.NOT_FOUND, "User not found!");
+        }
+
+        if (!isUserExists.isActive) {
+            throw new AppError(StatusCodes.NOT_FOUND, "User is not active!");
+        }
+
+        const links = await Link.find({
+            createdBy: authUser?.userId,
+        }).session(session);
+
+        if (!links) {
+            throw new AppError(StatusCodes.NOT_FOUND, "No links were found.");
+        }
+
+        await Link.deleteMany({ createdBy: authUser?.userId }, { session });
+
+        const linksIds = links.map((link) => link?._id);
+
+        await Click.deleteMany({ link: { $in: linksIds } }, { session });
+
+        await session.commitTransaction();
+
+        return {
+            message: "Links cleared successfully",
+        };
+    } catch (error) {
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+        throw error;
+    } finally {
+        session.endSession();
     }
-
-    const deletedLink = await Link.findOneAndUpdate(
-        { _id: linkId },
-        { isActive: false },
-        { new: true }
-    );
-
-    return deletedLink;
 };
 
 export const LinkServices = {
@@ -339,4 +401,5 @@ export const LinkServices = {
     getSingleLinkFromDB,
     updateLinkIntoDB,
     deleteLinkFromDB,
+    clearLinksFromDB,
 };

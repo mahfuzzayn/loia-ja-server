@@ -7,6 +7,9 @@ const linkSchema = new Schema<ILink>(
             type: String,
             required: true,
         },
+        shortUrl: {
+            type: String,
+        },
         shortCode: {
             type: String,
         },

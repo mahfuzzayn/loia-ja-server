@@ -1,9 +1,9 @@
 {
-    "name": "loia-ja-server",
+    "name": "sutourl-server",
     "version": "1.0.0",
-    "description": "loia-ja-server",
+    "description": "sutourl-server",
     "main": "server.js",
-    "repository": "https://github.com/mahfuzzayn/loia-ja-server.git",
+    "repository": "https://github.com/mahfuzzayn/sutourl-server.git",
     "author": "Mahfuz Zayn",
     "license": "MIT",
     "scripts": {
