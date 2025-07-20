@@ -3,6 +3,39 @@ import catchAsync from "../../utils/catchAsync";
 import { LinkServices } from "./link.service";
 import sendResponse from "../../utils/sendResponse";
 import { IJwtPayload } from "../auth/auth.interface";
+import config from "../../config";
+
+const createGuestLink = catchAsync(async (req, res) => {
+    const { result, authInfo } = await LinkServices.createGuestLinkIntoDB(
+        req,
+        req.body
+    );
+
+    if (authInfo) {
+        const { accessToken, refreshToken } = authInfo;
+
+        res.cookie("refreshToken", refreshToken, {
+            secure: config.NODE_ENV === "production",
+            httpOnly: true,
+            sameSite: "none",
+            maxAge: 1000 * 60 * 60 * 24 * 365,
+        });
+
+        sendResponse(res, {
+            statusCode: StatusCodes.OK,
+            success: true,
+            message: "Link created successfully",
+            data: { ...result.toObject(), accessToken },
+        });
+    } else {
+        sendResponse(res, {
+            statusCode: StatusCodes.OK,
+            success: true,
+            message: "Link created successfully",
+            data: result,
+        });
+    }
+});
 
 const createLink = catchAsync(async (req, res) => {
     const result = await LinkServices.createLinkIntoDB(
@@ -77,6 +110,7 @@ const deleteLink = catchAsync(async (req, res) => {
 });
 
 export const LinkController = {
+    createGuestLink,
     createLink,
     getMyLinks,
     getAllLinks,
